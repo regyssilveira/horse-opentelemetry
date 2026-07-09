@@ -101,6 +101,33 @@ end.
 
 ---
 
+## 🐳 Como Configurar o Servidor OpenTelemetry (Jaeger)
+
+Para receber e visualizar graficamente os dados de rastreamento das suas requisições, você precisará de um servidor compatível com OpenTelemetry. A forma mais simples e recomendada para ambiente de desenvolvimento é utilizar o **Jaeger** (que possui um receptor OTLP integrado) via **Docker Compose**:
+
+1. Crie um arquivo `docker-compose.yml` em uma pasta vazia com o seguinte conteúdo:
+   ```yaml
+   version: '3.8'
+
+   services:
+     jaeger:
+       image: jaegertracing/all-in-one:latest
+       container_name: jaeger-otel
+       ports:
+         - "16686:16686" # Painel Web do Jaeger (Visualizador)
+         - "4317:4317"   # Receptor OTLP gRPC (Protocolo OTel)
+         - "4318:4318"   # Receptor OTLP HTTP (Protocolo OTel)
+       environment:
+         - COLLECTOR_OTLP_ENABLED=true
+   ```
+2. No terminal, na pasta onde salvou o arquivo, execute:
+   ```bash
+   docker compose up -d
+   ```
+3. Acesse a interface gráfica no seu navegador: **[http://localhost:16686](http://localhost:16686)**.
+
+---
+
 ## 🧪 Como Testar o Ambiente
 
 O projeto possui exemplos de servidores prontos e uma suíte completa de testes unitários para você validar a configuração.
