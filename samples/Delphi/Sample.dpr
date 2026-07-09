@@ -9,10 +9,10 @@ uses
 
 begin
   // Registra o middleware do OpenTelemetry
-  THorse.Use(THorseOpenTelemetry.Middleware);
+  THorse.Use(THorseOpenTelemetry.Middleware());
 
   THorse.Get('/ping',
-    procedure(Req: THorseRequest; Res: THorseResponse; Next: TProc)
+    procedure(Req: THorseRequest; Res: THorseResponse)
     var
       LOtelCtx: THorseOpenTelemetryContext;
     begin
