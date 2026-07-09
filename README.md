@@ -120,9 +120,37 @@ Simula uma infraestrutura de produção completa com o coletor oficial do OpenTe
    ```bash
    docker compose -f docker-compose-complete.yml up -d
    ```
-
-Após iniciar qualquer uma das opções, acesse a interface gráfica no seu navegador:
+Após iniciar qualquer uma das opções, acesse a interface gráfica de visualização no seu navegador:
 👉 **[http://localhost:16686](http://localhost:16686)**
+
+### 📝 Comandos Úteis do Docker
+
+Navegue até a pasta `docker/` e utilize os comandos abaixo para gerenciar a stack:
+
+* **Visualizar os logs em tempo real**:
+  ```bash
+  # Para a Opção A
+  docker compose logs -f
+
+  # Para a Opção B
+  docker compose -f docker-compose-complete.yml logs -f
+  ```
+* **Parar os serviços**:
+  ```bash
+  # Para a Opção A
+  docker compose down
+
+  # Para a Opção B
+  docker compose -f docker-compose-complete.yml down
+  ```
+* **Verificar o status dos containers**:
+  ```bash
+  # Para a Opção A
+  docker compose ps
+
+  # Para a Opção B
+  docker compose -f docker-compose-complete.yml ps
+  ```
 
 ---
 
