@@ -10,7 +10,7 @@ uses
   {$IF DEFINED(FPC)}
     SysUtils, Classes, Generics.Collections,
   {$ELSE}
-    System.StringHelper, System.SysUtils, System.Classes, System.Generics.Collections,
+    System.SysUtils, System.Classes, System.Generics.Collections, System.Diagnostics,
   {$ENDIF}
   Horse;
 
@@ -28,12 +28,14 @@ type
   end;
 
   THorseOpenTelemetry = class
-  strict private
+  protected
     class function GenerateRandomHex(const ALen: Integer): string;
     class procedure ParseTraceParent(const AHeader: string; out ATraceId, AParentSpanId: string);
   public
     class function Middleware: THorseCallback;
   end;
+
+procedure OpenTelemetryMiddleware(Req: THorseRequest; Res: THorseResponse; Next: {$IF DEFINED(FPC)}TNextProc{$ELSE}TProc{$ENDIF});
 
 implementation
 
@@ -81,53 +83,67 @@ end;
 
 class function THorseOpenTelemetry.Middleware: THorseCallback;
 begin
-  Result :=
-    procedure(Req: THorseRequest; Res: THorseResponse; Next: {$IF DEFINED(FPC)}TNextProc{$ELSE}TProc{$ENDIF})
-    var
-      LTraceParent: string;
-      LTraceId: string;
-      LSpanId: string;
-      LParentSpanId: string;
-      LOtelContext: THorseOpenTelemetryContext;
-      LStartTime: Int64;
-      LEndTime: Int64;
-      LElapsedSeconds: Double;
-    begin
-      // 1. Tenta obter o TraceParent do header da requisição
-      LTraceParent := Req.Headers.Dictionary.Items['traceparent'];
+  Result := OpenTelemetryMiddleware;
+end;
 
-      // 2. Extrai ou gera os IDs
-      ParseTraceParent(LTraceParent, LTraceId, LParentSpanId);
+procedure OpenTelemetryMiddleware(Req: THorseRequest; Res: THorseResponse; Next: {$IF DEFINED(FPC)}TNextProc{$ELSE}TProc{$ENDIF});
+var
+  LTraceParent: string;
+  LTraceId: string;
+  LSpanId: string;
+  LParentSpanId: string;
+  LOtelContext: THorseOpenTelemetryContext;
+  LElapsedSeconds: Double;
+  {$IF NOT DEFINED(FPC)}
+  LStopwatch: TStopwatch;
+  {$ELSE}
+  LStartTime: Int64;
+  LEndTime: Int64;
+  {$ENDIF}
+begin
+  // 1. Tenta obter o TraceParent do header da requisição de forma segura
+  LTraceParent := Req.Headers['traceparent'];
 
-      if LTraceId = '' then
-        LTraceId := GenerateRandomHex(32);
+  // 2. Extrai ou gera os IDs
+  THorseOpenTelemetry.ParseTraceParent(LTraceParent, LTraceId, LParentSpanId);
 
-      LSpanId := GenerateRandomHex(16);
+  if LTraceId = '' then
+    LTraceId := THorseOpenTelemetry.GenerateRandomHex(32);
 
-      // 3. Cria o contexto OTel e armazena em Req.State (destruído automaticamente ao fim do ciclo de vida)
-      LOtelContext := THorseOpenTelemetryContext.Create(LTraceId, LSpanId, LParentSpanId);
-      Req.State.Add('otel.context', LOtelContext);
+  LSpanId := THorseOpenTelemetry.GenerateRandomHex(16);
 
-      // 4. Injeta os headers de rastreamento na resposta para fins de correlação
-      Res.AddHeader('traceparent', Format('00-%s-%s-01', [LTraceId, LSpanId]));
+  // 3. Cria o contexto OTel e armazena em Req.State (destruído automaticamente ao fim do ciclo de vida)
+  LOtelContext := THorseOpenTelemetryContext.Create(LTraceId, LSpanId, LParentSpanId);
+  Req.State.Add('otel.context', LOtelContext);
 
-      LStartTime := TThread.GetTickCount64;
-      try
-        Next();
-      finally
-        LEndTime := TThread.GetTickCount64;
-        LElapsedSeconds := (LEndTime - LStartTime) / 1000.0;
+  // 4. Injeta os headers de rastreamento na resposta para fins de correlação
+  Res.AddHeader('traceparent', Format('00-%s-%s-01', [LTraceId, LSpanId]));
 
-        // Aqui, futuramente, o middleware pode empacotar a Span em uma requisição OTLP
-        // e enviá-la para o OpenTelemetry Collector em segundo plano.
-        // O escopo do Core e os metadados (Req.MatchedRoute, Res.Status) estão totalmente acessíveis:
-        //   TraceID: LOtelContext.TraceId
-        //   SpanID: LOtelContext.SpanId
-        //   MatchedRoute: Req.MatchedRoute
-        //   Status: Res.Status
-        //   Duration: LElapsedSeconds
-      end;
-    end;
+  {$IF NOT DEFINED(FPC)}
+  LStopwatch := TStopwatch.StartNew;
+  {$ELSE}
+  LStartTime := TThread.GetTickCount64;
+  {$ENDIF}
+  try
+    Next();
+  finally
+    {$IF NOT DEFINED(FPC)}
+    LStopwatch.Stop;
+    LElapsedSeconds := LStopwatch.Elapsed.TotalSeconds;
+    {$ELSE}
+    LEndTime := TThread.GetTickCount64;
+    LElapsedSeconds := (LEndTime - LStartTime) / 1000.0;
+    {$ENDIF}
+
+    // Aqui, futuramente, o middleware pode empacotar a Span em uma requisição OTLP
+    // e enviá-la para o OpenTelemetry Collector em segundo plano.
+    // O escopo do Core e os metadados (Req.MatchedRoute, Res.Status) estão totalmente acessíveis:
+    //   TraceID: LOtelContext.TraceId
+    //   SpanID: LOtelContext.SpanId
+    //   MatchedRoute: Req.MatchedRoute
+    //   Status: Res.Status
+    //   Duration: LElapsedSeconds
+  end;
 end;
 
 initialization
