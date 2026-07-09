@@ -188,3 +188,27 @@ curl -i -H "traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01
   * **Parent SpanID**: `00f067aa0ba902b7` (o SpanID que originou a requisição).
   * **SpanID**: Um novo ID gerado unicamente para esta execução local.
 * **Headers de Resposta**: O cabeçalho `traceparent` retornado na resposta HTTP propagará o mesmo `TraceID` associado ao novo `SpanID` gerado localmente.
+
+---
+
+## 📊 Visualização no Jaeger Dashboard
+
+O ecossistema OpenTelemetry permite analisar os rastreamentos e dependências de forma muito rica e detalhada. Abaixo estão explicadas as duas principais telas de observabilidade disponíveis no Jaeger ao testar este projeto:
+
+### 1. Painel de Busca e Linha de Tempo (Search & Timeline)
+Esta tela oferece uma visão geral do tráfego na API, agrupando as requisições por serviço, rota e horário.
+
+![Pesquisa e Timeline no Jaeger](docs/captura1.png)
+
+* **Gráfico de Dispersão (Top)**: Cada círculo representa uma requisição executada. Bolinhas verdes representam requisições com sucesso e vermelhas sinalizam erros de execução. O tamanho da bolinha é proporcional ao tempo de duração da requisição.
+* **Lista de Traces (Bottom)**: Mostra os detalhes de cada transação, como a rota (`POST /login` ou `POST /orders`), o tempo total de processamento, e quais micro-serviços foram acionados naquela chamada (ex: `api-gateway`, `order-service` e `payment-service` envolvidos em uma única transação).
+
+---
+
+### 2. Rastreamento Distribuído Detalhado (Trace Detail)
+Ao clicar em uma transação, é exibida a árvore hierárquica (gráfico de Gantt) do ciclo de vida da requisição.
+
+![Detalhe de Rastreamento no Jaeger](docs/captura2.png)
+
+* **Cascata de Execução (Timeline)**: Exibe a ordem sequencial e o tempo gasto em cada serviço. Na imagem acima, a chamada `POST /orders` (no `api-gateway`) disparou a criação do pedido (`order-service`), que por sua vez disparou a autorização de pagamento (`payment-service`).
+* **Tags de Metadados e Erros**: Ao expandir um Span com falha, o Jaeger mostra os detalhes do erro de forma automatizada (como `error = true` e `error.message = Insufficient balance on credit card`), facilitando a depuração e diagnóstico rápido de falhas sem precisar vasculhar arquivos de logs massivos.
