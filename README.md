@@ -103,28 +103,26 @@ end.
 
 ## 🐳 Como Configurar o Servidor OpenTelemetry (Jaeger)
 
-Para receber e visualizar graficamente os dados de rastreamento das suas requisições, você precisará de um servidor compatível com OpenTelemetry. A forma mais simples e recomendada para ambiente de desenvolvimento é utilizar o **Jaeger** (que possui um receptor OTLP integrado) via **Docker Compose**:
+Para receber e visualizar graficamente os dados de rastreamento das suas requisições, o projeto já inclui arquivos de configuração Docker prontos na pasta [docker/](file:///d:/Delphi/horse-opentelemetry/docker/).
 
-1. Crie um arquivo `docker-compose.yml` em uma pasta vazia com o seguinte conteúdo:
-   ```yaml
-   version: '3.8'
-
-   services:
-     jaeger:
-       image: jaegertracing/all-in-one:latest
-       container_name: jaeger-otel
-       ports:
-         - "16686:16686" # Painel Web do Jaeger (Visualizador)
-         - "4317:4317"   # Receptor OTLP gRPC (Protocolo OTel)
-         - "4318:4318"   # Receptor OTLP HTTP (Protocolo OTel)
-       environment:
-         - COLLECTOR_OTLP_ENABLED=true
-   ```
-2. No terminal, na pasta onde salvou o arquivo, execute:
+### Opção A: Setup Rápido (Apenas Jaeger - Recomendado)
+Ideal para desenvolvimento local, onde o próprio Jaeger atua como coletor OTLP recebendo diretamente as requisições:
+1. Abra o terminal e navegue até a pasta `docker/` do projeto.
+2. Execute o comando:
    ```bash
    docker compose up -d
    ```
-3. Acesse a interface gráfica no seu navegador: **[http://localhost:16686](http://localhost:16686)**.
+
+### Opção B: Stack Completa (OTel Collector + Jaeger)
+Simula uma infraestrutura de produção completa com o coletor oficial do OpenTelemetry recebendo os dados das APIs e exportando-os para o Jaeger:
+1. Abra o terminal e navegue até a pasta `docker/` do projeto.
+2. Execute o comando:
+   ```bash
+   docker compose -f docker-compose-complete.yml up -d
+   ```
+
+Após iniciar qualquer uma das opções, acesse a interface gráfica no seu navegador:
+👉 **[http://localhost:16686](http://localhost:16686)**
 
 ---
 

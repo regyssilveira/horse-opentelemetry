@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger-otel
+    ports:
+      - "16686:16686" # Painel Web do Jaeger (Visualizador)
+      - "4317:4317"   # Receptor OTLP gRPC (Protocolo OTel)
+      - "4318:4318"   # Receptor OTLP HTTP (Protocolo OTel)
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
