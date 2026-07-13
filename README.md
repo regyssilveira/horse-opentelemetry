@@ -212,3 +212,9 @@ Ao clicar em uma transação, é exibida a árvore hierárquica (gráfico de Gan
 
 * **Cascata de Execução (Timeline)**: Exibe a ordem sequencial e o tempo gasto em cada serviço. Na imagem acima, a chamada `POST /orders` (no `api-gateway`) disparou a criação do pedido (`order-service`), que por sua vez disparou a autorização de pagamento (`payment-service`).
 * **Tags de Metadados e Erros**: Ao expandir um Span com falha, o Jaeger mostra os detalhes do erro de forma automatizada (como `error = true` e `error.message = Insufficient balance on credit card`), facilitando a depuração e diagnóstico rápido de falhas sem precisar vasculhar arquivos de logs massivos.
+
+---
+
+## 📄 Licença
+
+Este projeto está licenciado sob a [Apache License 2.0](LICENSE).
